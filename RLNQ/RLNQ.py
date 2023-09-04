@@ -1,3 +1,4 @@
+
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -132,42 +133,45 @@ app.layout = html.Div([
     ),
     html.Div(id='label-dropdowns'),
     html.Button('Train Model', id='train-button'),
-    dcc.Graph(id='model-graph')
+    dcc.Graph(id='model-graph', figure={})
 ])
 
 @app.callback(
     Output('label-dropdowns', 'children'),
-    Input('upload-data', 'filenames')
+    Input('upload-data', 'contents'),
+    State('upload-data', 'filename')
 )
-def update_dropdowns(filenames):
-    if filenames is None:
+def update_dropdowns(contents, filenames):
+    if contents is None:
         return []
-    dropdowns = []
-    for fname in filenames:
-        dropdown = dcc.Dropdown(
-            options=[
-                {'label': 'Bullish Reversal', 'value': 2},
-                {'label': 'No Reversal', 'value': 1},
-                {'label': 'Bearish Reversal', 'value': 0}
-            ],
-            value=1,
-            style={'width': '50%', 'marginBottom': '10px'}
-        )
-        dropdowns.append(dropdown)
-    return dropdowns
+    components = []
+    for idx, filename in enumerate(filenames):
+        components.append(html.Div([
+            html.Label(f"Label for {filename}:"),
+            dcc.Dropdown(
+                options=[
+                    {'label': 'Bullish Reversal', 'value': 2},
+                    {'label': 'No Reversal', 'value': 1},
+                    {'label': 'Bearish Reversal', 'value': 0}
+                ],
+                value=1,
+                style={'width': '50%', 'marginBottom': '10px'}
+            )
+        ]))
+    return components
 
 @app.callback(
     Output('model-graph', 'figure'),
     Input('train-button', 'n_clicks'),
     State('upload-data', 'contents'),
-    State('label-dropdowns', 'value')
+    State('label-dropdowns', 'children')
 )
-def train_and_visualize(n_clicks, image_contents, labels):
+def train_and_visualize(n_clicks, image_contents, label_components):
+    if image_contents is None or label_components is None:
+        return {}
+    labels = [comp['props']['children'][1]['props']['value'] for comp in label_components]
     images = [preprocess_image(content.split(",")[1]) for content in image_contents]
-    return {
-        'data': [{'x': [1, 2, 3], 'y': [1, 4, 9], 'type': 'line', 'name': 'Dummy Training Data'}],
-        'layout': {'title': 'Dummy Training Visualization'}
-    }
+    return {}
 
 if __name__ == '__main__':
     app.run_server(debug=True)
