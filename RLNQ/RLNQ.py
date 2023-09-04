@@ -23,8 +23,12 @@ def augment_image(image):
     rotation_matrix = cv2.getRotationMatrix2D((cols/2, rows/2), rotation_angle, 1)
     return cv2.warpAffine(image, rotation_matrix, (cols, rows))
 
-def preprocess_image(image_path):
-    image = cv2.imread(image_path)
+import base64
+import io
+
+def preprocess_image(image_base64):
+    image_data = base64.b64decode(image_base64)
+    image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = resize_image(image)
     image = normalize_image(image)
@@ -68,6 +72,8 @@ def build_cnn():
     model.add(layers.Dense(3, activation='softmax'))
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
+
+
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
@@ -133,6 +139,7 @@ app.layout = html.Div([
     ),
     html.Div(id='label-dropdowns'),
     html.Button('Train Model', id='train-button'),
+    html.Div(id='training-status'),
     dcc.Graph(id='model-graph', figure={})
 ])
 
@@ -161,17 +168,30 @@ def update_dropdowns(contents, filenames):
     return components
 
 @app.callback(
-    Output('model-graph', 'figure'),
+    [Output('model-graph', 'figure'),
+     Output('train-button', 'children'),
+     Output('train-button', 'disabled'),
+     Output('training-status', 'children')],
     Input('train-button', 'n_clicks'),
     State('upload-data', 'contents'),
     State('label-dropdowns', 'children')
 )
 def train_and_visualize(n_clicks, image_contents, label_components):
     if image_contents is None or label_components is None:
-        return {}
+        return {}, 'Train Model', False, ''
     labels = [comp['props']['children'][1]['props']['value'] for comp in label_components]
     images = [preprocess_image(content.split(",")[1]) for content in image_contents]
-    return {}
+    
+    # Placeholder for actual training code
+    # In the next steps, we will integrate the actual training, evaluation, and visualization processes
+    
+    # Placeholder for RL training (will be added later)
+    # Train the CNN model
+    cnn_model = train_cnn(images, labels)
+    
+    # Placeholder for RL training (will be added later)
+    
+    return {}, 'Training Complete', False, 'Training completed successfully.'
 
 if __name__ == '__main__':
     app.run_server(debug=True)
